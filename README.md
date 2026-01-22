@@ -8,7 +8,9 @@ Welcome to axiom - my lightweight, dependency-free neural network library writte
 Modern ML frameworks (PyTorch, TensorFlow) abstract away the actual engineering. I built this to understand the "black box" at the lowest level.
 This library implements tensors, computational graphs, and automatic differentiation entirely from scratch—managing every byte of memory manually.
 
-**No BLAS. No LAPACK. No Python. Just C.**
+No BLAS, LAPACK, or Python in this repo. Just C.
+
+Additionally, **No LLMs were harmed or used in the writing of this code.**
 
 ## 🚀 Features
 - **Pure C Implementation:** Zero external dependencies. Standard library only (`<stdlib.h>`, `<math.h>`).
