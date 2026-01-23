@@ -52,8 +52,31 @@ void dense_free(DenseLayer* layer) {
 }
 
 Tensor* dense_forward(DenseLayer* layer, const Tensor* input) {
-    // TODO: Implement forward pass: output = input @ weights + biases
-    return NULL;
+    if (layer == NULL || input == NULL) return NULL;
+
+    if (input->ndim != 2) return NULL;
+    if (input->shape[1] != layer->input_size) return NULL;
+
+    Tensor* output = tensor_matmul(input, layer->weights);
+    if (output == NULL) return NULL;
+
+    Tensor* b = tensor_broadcast(layer->biases, output->shape, output->ndim);
+
+    Tensor* result = tensor_add(output, b);
+    if (result == NULL) {
+        tensor_free(output);
+        tensor_free(b);
+        return NULL;
+    }
+    tensor_free(output); // if i assign the output of above to this same variable, i'll get a memory leak and the old one will be lost;
+    tensor_free(b);
+
+    if (layer->input_cache != NULL) {
+        tensor_free(layer->input_cache);
+    }
+    layer->input_cache = tensor_copy(input);
+
+    return result;
 }
 
 Tensor* dense_backward(DenseLayer* layer, const Tensor* grad_output, float learning_rate) {
