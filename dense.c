@@ -111,7 +111,7 @@ Tensor* dense_backward(DenseLayer* layer, const Tensor* grad_output, float learn
         grad_biases->data[j] = sum;
     }
 
-    // update weights and biases with learning rate via gradient descent
+    // update weights and biases with learning rate via gradient descent; later will move this logic to optimizer.c and pass in the function
     for(size_t i = 0; i < layer->weights->size; i++) {
         layer->weights->data[i] -= learning_rate * grad_weights->data[i];
     }
