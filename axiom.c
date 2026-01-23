@@ -2,12 +2,39 @@
 #include <stdlib.h>
 
 AxiomNet* axiom_create(void) {
-    // TODO: Implement network creation
-    return NULL;
+    AxiomNet* net = malloc(sizeof(AxiomNet));
+    if (net == NULL) return NULL;
+
+    net->layers = NULL;
+    net->optimizer = NULL;
+    net->num_layers = 0;
+
+    return net;
 }
 
 void axiom_free(AxiomNet* net) {
-    // TODO: Implement network cleanup
+    if (net == NULL) return;
+
+    Layer* current = net->layers; // layers is a linkedlist inside of the axiomnet struct
+    while (current != NULL) {
+        Layer* next = current->next;
+
+        if (current->type == LAYER_DENSE) {
+            dense_free(current->layer.dense);
+        } else if (current->type == LAYER_ACTIVATION) {
+            activation_free(current->layer.activation);
+        }
+
+        free(current);
+
+        current = next;
+    }
+
+    if (net->optimizer != NULL) {
+        optimizer_free(net->optimizer);
+    }
+
+    free(net);
 }
 
 void axiom_add(AxiomNet* net, void* layer, int layer_type) {
