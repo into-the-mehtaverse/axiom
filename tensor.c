@@ -149,65 +149,47 @@ Tensor* tensor_transpose(const Tensor* t) {
 }
 
 Tensor* tensor_broadcast(const Tensor* t, size_t* new_shape, size_t new_ndim) {
+    // for now doing this version with a copy into result tensor, i know its less efficient but for sake of moving forward faster just implmeneting this here now
+
     if (t == NULL || new_shape == NULL) return NULL;
-    if (new_ndim < t->ndim) return NULL;  // can't be broadcasting to smaller dimensions
+    if (new_ndim < t->ndim) return NULL;
 
-
-    for (int i = 0; i < t->ndim; i++) {
-        size_t orig_dim = t->shape[t->ndim - 1 - i];
-        size_t new_dim = new_shape[new_ndim - 1 - i];
+    // check broadcasting compatibility
+    size_t offset = new_ndim - t->ndim;
+    for (size_t d = 0; d < t->ndim; d++) {
+        size_t orig_dim = t->shape[d];
+        size_t new_dim = new_shape[offset + d];
         if (orig_dim != 1 && orig_dim != new_dim) {
-            return NULL;  // incompatible; either they have to be same, or one of htem has to be 1
+            return NULL;  // incompatible; either dims are same or one has to be 1
         }
     }
 
+    // create result tensor
     Tensor* result = tensor_create(new_shape, new_ndim);
     if (result == NULL) return NULL;
 
-    // allocate array to hold multi-dimensional indices
-    size_t* result_indices = malloc(result->ndim * sizeof(size_t));
-    if (result_indices == NULL) {
-        tensor_free(result);
-        return NULL;
-    }
-
-    size_t* orig_indices = malloc(t->ndim * sizeof(size_t));
-    if (orig_indices == NULL) {
-        free(result_indices);
-        tensor_free(result);
-        return NULL;
-    }
-
-    // iterate through each position in result
+    // for each position in result, find corresponding position in original
     for (size_t flat_idx = 0; flat_idx < result->size; flat_idx++) {
-        // convert flat index to multi-dimensional indices in result
         size_t remaining = flat_idx;
-        for (int dim = result->ndim - 1; dim >= 0; dim--) {
-            result_indices[dim] = remaining / result->strides[dim];
-            remaining = remaining % result->strides[dim];
-        }
+        size_t orig_flat = 0;
 
-        for (int dim = 0; dim < t->ndim; dim++) {
-            int result_dim = result->ndim - t->ndim + dim;
-            if (t->shape[dim] == 1) {
-                orig_indices[dim] = 0;  // broadcast dimension of size1
-            } else {
-                orig_indices[dim] = result_indices[result_dim];
+        // convert flat index to coordinates and map to original
+        for (size_t dim = 0; dim < new_ndim; dim++) {
+            size_t idx = remaining / result->strides[dim];
+            remaining = remaining % result->strides[dim];
+
+            // map to original tensor for dimensions that exist in original
+            if (dim >= offset) {
+                size_t orig_dim_idx = dim - offset;
+                if (t->shape[orig_dim_idx] != 1) {
+                    orig_flat += idx * t->strides[orig_dim_idx];
+                }
+                // if original dimension is size 1, use index 0 (broadcasting)
             }
         }
 
-        // calculate flat index in original tensor
-        size_t orig_flat_idx = 0;
-        for (int dim = 0; dim < t->ndim; dim++) {
-            orig_flat_idx += orig_indices[dim] * t->strides[dim];
-        }
-
-        // copy value from original to result
-        result->data[flat_idx] = t->data[orig_flat_idx];
+        result->data[flat_idx] = t->data[orig_flat];
     }
-
-    free(result_indices);
-    free(orig_indices);
 
     return result;
 }
