@@ -149,10 +149,67 @@ Tensor* tensor_transpose(const Tensor* t) {
 }
 
 Tensor* tensor_broadcast(const Tensor* t, size_t* new_shape, size_t new_ndim) {
+    if (t == NULL || new_shape == NULL) return NULL;
+    if (new_ndim < t->ndim) return NULL;  // can't be broadcasting to smaller dimensions
 
 
+    for (int i = 0; i < t->ndim; i++) {
+        size_t orig_dim = t->shape[t->ndim - 1 - i];
+        size_t new_dim = new_shape[new_ndim - 1 - i];
+        if (orig_dim != 1 && orig_dim != new_dim) {
+            return NULL;  // incompatible; either they have to be same, or one of htem has to be 1
+        }
+    }
 
-    return ;
+    Tensor* result = tensor_create(new_shape, new_ndim);
+    if (result == NULL) return NULL;
+
+    // allocate array to hold multi-dimensional indices
+    size_t* result_indices = malloc(result->ndim * sizeof(size_t));
+    if (result_indices == NULL) {
+        tensor_free(result);
+        return NULL;
+    }
+
+    size_t* orig_indices = malloc(t->ndim * sizeof(size_t));
+    if (orig_indices == NULL) {
+        free(result_indices);
+        tensor_free(result);
+        return NULL;
+    }
+
+    // iterate through each position in result
+    for (size_t flat_idx = 0; flat_idx < result->size; flat_idx++) {
+        // convert flat index to multi-dimensional indices in result
+        size_t remaining = flat_idx;
+        for (int dim = result->ndim - 1; dim >= 0; dim--) {
+            result_indices[dim] = remaining / result->strides[dim];
+            remaining = remaining % result->strides[dim];
+        }
+
+        for (int dim = 0; dim < t->ndim; dim++) {
+            int result_dim = result->ndim - t->ndim + dim;
+            if (t->shape[dim] == 1) {
+                orig_indices[dim] = 0;  // broadcast dimension of size1
+            } else {
+                orig_indices[dim] = result_indices[result_dim];
+            }
+        }
+
+        // calculate flat index in original tensor
+        size_t orig_flat_idx = 0;
+        for (int dim = 0; dim < t->ndim; dim++) {
+            orig_flat_idx += orig_indices[dim] * t->strides[dim];
+        }
+
+        // copy value from original to result
+        result->data[flat_idx] = t->data[orig_flat_idx];
+    }
+
+    free(result_indices);
+    free(orig_indices);
+
+    return result;
 }
 
 Tensor* tensor_apply(const Tensor* t, float (*func)(float)) {
