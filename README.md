@@ -1,18 +1,17 @@
-# c-neural-net
+# axiom - my c-neural-net
 Welcome to axiom - my lightweight, dependency-free neural network library written in pure C from scratch.
 
 > **Status:** Active Development
 > **Goal:** 95%+ Accuracy on MNIST using purely handwritten backpropagation and matrix operations.
 
-## ⚡️ Why?
+## Motivation
 Modern ML frameworks (PyTorch, TensorFlow) abstract away the actual engineering. I built this to understand the "black box" at the lowest level.
 This library implements tensors, computational graphs, and automatic differentiation entirely from scratch—managing every byte of memory manually.
 
 Only C in this repo, no BLAS, LAPACK, or Python.
 
-Additionally, **No LLMs were harmed or used in the writing of this code.**
 
-## 🚀 Features
+## Features
 - **Pure C Implementation:** Zero external dependencies. Standard library only (`<stdlib.h>`, `<math.h>`).
 - **Custom Tensor Engine:** Handwritten matrix operations (matmul, transpose, broadcast).
 - **Automatic Differentiation:** Implements full backpropagation for dense layers.
@@ -20,7 +19,7 @@ Additionally, **No LLMs were harmed or used in the writing of this code.**
 - **Optimization:** Stochastic Gradient Descent (SGD) with configurable learning rates.
 - **Serialization:** Save and load trained models for inference.
 
-## 🛠 Tech Stack & Architecture
+## Tech Stack & Architecture
 - **Language:** C
 - **Build System:** Makefile
 - **Profiling:** Valgrind (Memcheck)
