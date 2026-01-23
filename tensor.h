@@ -25,6 +25,6 @@ Tensor* tensor_broadcast(const Tensor* t, size_t* new_shape, size_t new_ndim);
 // Element-wise operations
 Tensor* tensor_apply(const Tensor* t, float (*func)(float));
 void tensor_fill(Tensor* t, float value);
-void tensor_rand(Tensor* t, float min, float max);
+void tensor_rand(Tensor* t, float min, float max, unsigned int seed);
 
 #endif // TENSOR_H

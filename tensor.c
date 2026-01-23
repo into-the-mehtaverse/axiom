@@ -195,14 +195,34 @@ Tensor* tensor_broadcast(const Tensor* t, size_t* new_shape, size_t new_ndim) {
 }
 
 Tensor* tensor_apply(const Tensor* t, float (*func)(float)) {
-    // TODO: Implement element-wise function application
-    return NULL;
+    if (t == NULL || func == NULL) return NULL;
+
+    Tensor* result = tensor_create(t->shape, t->ndim);
+    if (result == NULL) return NULL;
+
+    for (size_t i = 0; i < t->size; i++) {
+        result->data[i] = func(t->data[i]);
+    }
+    return result;
 }
 
 void tensor_fill(Tensor* t, float value) {
-    // TODO: Implement tensor filling
+    if (t == NULL) return;
+
+    for (size_t i = 0; i < t->size; i++) {
+        t->data[i] = value;
+    }
 }
 
-void tensor_rand(Tensor* t, float min, float max) {
-    // TODO: Implement random initialization
+void tensor_rand(Tensor* t, float min, float max, unsigned int seed) {
+    if (t == NULL) return;
+
+    srand(seed); // this updates the global random state, so all subsequent calls will be impacted. can add a local rng state later
+
+
+    float range = max - min;
+    for (size_t i = 0; i < t->size; i++) {
+        float random = (float)rand() / (float)RAND_MAX; // get it between 0.0 and 1.0
+        t->data[i] = min + random * range;
+    }
 }
