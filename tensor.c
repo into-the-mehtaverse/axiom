@@ -11,7 +11,7 @@ Tensor* tensor_create(size_t* shape, size_t ndim) {
 
     // calculate total size
     size_t total_size = 1;
-    for (int i = 0; i < ndim; i++) {
+    for (size_t i = 0; i < ndim; i++) {
         total_size *= shape[i];
     }
     // allocate data array
@@ -42,7 +42,7 @@ Tensor* tensor_create(size_t* shape, size_t ndim) {
 
     // calculate strides
     tensor->strides[ndim - 1] = 1;
-    for (int i = ndim - 2; i >= 0; i--) {
+    for (size_t i = ndim - 2; i >= 0; i--) {
         tensor->strides[i] = tensor->strides[i + 1] * shape[i + 1];
     }
 
@@ -71,7 +71,7 @@ Tensor* tensor_copy(const Tensor* t) {
     if (copy == NULL) return NULL;
 
     // copy data
-    for (int i = 0; i < t->size; i++) {
+    for (size_t i = 0; i < t->size; i++) {
         copy->data[i] = t->data[i];
     }
 
@@ -115,15 +115,35 @@ Tensor* tensor_add(const Tensor* a, const Tensor* b) {
     if (a->ndim != b->ndim) return NULL;
 
     // ensure shapes match
-    for (int i = 0; i < a->ndim; i++) {
+    for (size_t i = 0; i < a->ndim; i++) {
         if (a->shape[i] != b->shape[i]) return NULL;
     }
 
     Tensor* result = tensor_create(a->shape, a->ndim);
     if (result == NULL) return NULL;
 
-    for (int i = 0; i < a->size; i++) {
+    for (size_t i = 0; i < a->size; i++) {
         result->data[i] = a->data[i] + b->data[i];
+    }
+
+    return result;
+}
+
+Tensor* tensor_subtract(const Tensor* a, const Tensor* b) {
+    // this is gonna do a - b
+    if (a == NULL || b == NULL) return NULL;
+    if (a->ndim != b->ndim) return NULL;
+
+    // ensure shapes match
+    for (size_t i = 0; i < a->ndim; i++) {
+        if (a->shape[i] != b->shape[i]) return NULL;
+    }
+
+    Tensor* result = tensor_create(a->shape, a->ndim);
+    if (result == NULL) return NULL;
+
+    for (size_t i = 0; i < a->size; i++) {
+        result->data[i] = a->data[i] - b->data[i];
     }
 
     return result;

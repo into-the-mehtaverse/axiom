@@ -19,6 +19,7 @@ Tensor* tensor_copy(const Tensor* t);
 // Matrix operations
 Tensor* tensor_matmul(const Tensor* a, const Tensor* b);
 Tensor* tensor_add(const Tensor* a, const Tensor* b);
+Tensor* tensor_subtract(const Tensor* a, const Tensor* b);
 Tensor* tensor_transpose(const Tensor* t);
 Tensor* tensor_broadcast(const Tensor* t, size_t* new_shape, size_t new_ndim);
 
