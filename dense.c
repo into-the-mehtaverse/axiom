@@ -80,6 +80,59 @@ Tensor* dense_forward(DenseLayer* layer, const Tensor* input) {
 }
 
 Tensor* dense_backward(DenseLayer* layer, const Tensor* grad_output, float learning_rate) {
-    // TODO: Implement backward pass with gradient computation and weight updates
-    return NULL;
+    if (layer == NULL || grad_output == NULL) return NULL;
+    if (grad_output->ndim != 2) return NULL;
+    if (grad_output->shape[1] != layer->output_size) return NULL;
+
+    if (layer->input_cache == NULL) return NULL;
+
+    Tensor* input_transposed = tensor_transpose(layer->input_cache);
+
+    // compute gradients for weights
+    Tensor* grad_weights = tensor_matmul(input_transposed, grad_output);
+    tensor_free(input_transposed);
+
+    // sum bias over batch (axis 0). bias is shared across batch.
+    // ex. if grad_output is [[0.1, 0.2], [0.3, 0.4]] then grad_biases would be [0.4, 0.6];
+    size_t biases_shape[] = {layer->output_size};
+    Tensor* grad_biases = tensor_create(biases_shape, 1);
+        if (grad_biases == NULL) {
+        tensor_free(grad_weights);
+        return NULL;
+        }
+
+
+    for (size_t j = 0; j < layer->output_size; j++) {
+        float sum = 0.0f;
+        for (size_t i = 0; i < grad_output->shape[0]; i++) {
+            size_t idx = i * grad_output->strides[0] + j * grad_output->strides[1];
+            sum += grad_output->data[idx];
+        }
+        grad_biases->data[j] = sum;
+    }
+
+    // update weights and biases with learning rate via gradient descent
+    for(size_t i = 0; i < layer->weights->size; i++) {
+        layer->weights->data[i] -= learning_rate * grad_weights->data[i];
+    }
+    for(size_t i = 0; i < layer->biases->size; i++) {
+        layer->biases->data[i] -= learning_rate * grad_biases->data[i];
+    }
+
+    // free the temp tensors
+    tensor_free(grad_weights);
+    tensor_free(grad_biases);
+
+    // compute the gradient for input into next layer in the backprop order (the previous layer)
+    Tensor* weights_transposed = tensor_transpose(layer->weights);
+    if(weights_transposed == NULL) {
+        return NULL;
+    }
+
+    Tensor* grad_input = tensor_matmul(grad_output, weights_transposed);
+    tensor_free(weights_transposed);
+    if (grad_input == NULL) return NULL;
+
+
+    return grad_input;
 }
