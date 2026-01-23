@@ -10,6 +10,7 @@ typedef struct {
         ACTIVATION_NONE
     } type;
     Tensor* input_cache;
+    Tensor* output_cache;
 } Activation;
 
 Activation* activation_relu(void);
