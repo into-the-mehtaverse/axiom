@@ -18,9 +18,9 @@ static void run_test(void) {
     axiom_add(net, axiom_layer_dense(4, 2), LAYER_DENSE);
     axiom_add(net, axiom_activation_softmax(), LAYER_ACTIVATION);
 
-    /* Dummy data: 2 examples, 4 features -> 2 classes */
-    size_t x_shape[] = {2, 4};
-    size_t y_shape[] = {2, 2};
+    /* Less trivial data: 4 examples, 4 features -> 2 classes */
+    size_t x_shape[] = {4, 4};
+    size_t y_shape[] = {4, 2};
     Tensor* x_train = tensor_create(x_shape, 2);
     Tensor* y_train = tensor_create(y_shape, 2);
     if (!x_train || !y_train) {
@@ -31,22 +31,81 @@ static void run_test(void) {
         return;
     }
 
-    tensor_fill(x_train, 0.5f);
+    /* Random-ish inputs (seed 42), one-hot targets: ex0,1 -> class 0; ex2,3 -> class 1 */
+    tensor_rand(x_train, -0.5f, 0.5f, 42);
     tensor_fill(y_train, 0.0f);
-    y_train->data[0] = 1.0f; /* one-hot [1,0] */
-    y_train->data[3] = 1.0f; /* one-hot [0,1] */
+    y_train->data[0] = 1.0f;
+    y_train->data[1] = 0.0f;
+    y_train->data[2] = 1.0f;
+    y_train->data[3] = 0.0f;
+    y_train->data[4] = 0.0f;
+    y_train->data[5] = 1.0f;
+    y_train->data[6] = 0.0f;
+    y_train->data[7] = 1.0f;
 
-    printf("Training 5 epochs...\n");
-    axiom_train(net, x_train, y_train, 5, 0.01f);
+    printf("Training 25 epochs, lr=0.05 ...\n");
+    axiom_train(net, x_train, y_train, 25, 0.05f);
 
-    Tensor* out = axiom_forward(net, x_train);
-    if (out) {
-        printf("Predictions shape [%zu, %zu]\n", out->shape[0], out->shape[1]);
-        printf("  ex0: [%.4f, %.4f]\n", out->data[0], out->data[1]);
-        printf("  ex1: [%.4f, %.4f]\n", out->data[2], out->data[3]);
-        tensor_free(out);
+    Tensor* out_orig = axiom_forward(net, x_train);
+    if (!out_orig) {
+        printf("FAIL: axiom_forward (original)\n");
+        tensor_free(x_train);
+        tensor_free(y_train);
+        axiom_free(net);
+        return;
+    }
+    printf("Predictions shape [%zu, %zu]\n", out_orig->shape[0], out_orig->shape[1]);
+    for (size_t i = 0; i < 4; i++) {
+        printf("  ex%zu: [%.4f, %.4f]\n", i,
+               out_orig->data[i * 2], out_orig->data[i * 2 + 1]);
     }
 
+    /* Verify save/load: save net, free, load, forward again; predictions must match. */
+    const char* ckpt = "build/smoke_checkpoint.bin";
+    printf("Verifying save/load ...\n");
+    axiom_save(net, ckpt);
+    axiom_free(net);
+    net = axiom_load(ckpt);
+    if (!net) {
+        printf("FAIL: axiom_load\n");
+        tensor_free(out_orig);
+        tensor_free(x_train);
+        tensor_free(y_train);
+        return;
+    }
+    Tensor* out_loaded = axiom_forward(net, x_train);
+    if (!out_loaded) {
+        printf("FAIL: axiom_forward (after load)\n");
+        tensor_free(out_orig);
+        tensor_free(x_train);
+        tensor_free(y_train);
+        axiom_free(net);
+        return;
+    }
+    if (out_orig->size != out_loaded->size) {
+        printf("FAIL: save/load (output size mismatch %zu vs %zu)\n", out_orig->size, out_loaded->size);
+        tensor_free(out_orig);
+        tensor_free(out_loaded);
+        tensor_free(x_train);
+        tensor_free(y_train);
+        axiom_free(net);
+        return;
+    }
+    for (size_t i = 0; i < out_orig->size; i++) {
+        if (out_orig->data[i] != out_loaded->data[i]) {
+            printf("FAIL: save/load (predictions differ at index %zu: %.6f vs %.6f)\n",
+                   i, out_orig->data[i], out_loaded->data[i]);
+            tensor_free(out_orig);
+            tensor_free(out_loaded);
+            tensor_free(x_train);
+            tensor_free(y_train);
+            axiom_free(net);
+            return;
+        }
+    }
+    printf("PASS: save/load (predictions match)\n");
+    tensor_free(out_orig);
+    tensor_free(out_loaded);
     tensor_free(x_train);
     tensor_free(y_train);
     axiom_free(net);
