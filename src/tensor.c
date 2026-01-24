@@ -42,7 +42,8 @@ Tensor* tensor_create(size_t* shape, size_t ndim) {
 
     // calculate strides
     tensor->strides[ndim - 1] = 1;
-    for (size_t i = ndim - 2; i >= 0; i--) {
+    for (size_t k = 1; k < ndim; k++) {
+        size_t i = ndim - 1 - k;
         tensor->strides[i] = tensor->strides[i + 1] * shape[i + 1];
     }
 

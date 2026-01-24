@@ -1,29 +1,24 @@
 CC = gcc
-CFLAGS = -Wall -Wextra -std=c11 -O2 -g
+CFLAGS = -Wall -Wextra -std=c11 -O2 -g -Isrc
 LDFLAGS = -lm
 
-# Source files
-SRCS = tensor.c dense.c activations.c optimizer.c loss.c axiom.c main.c
-OBJS = $(SRCS:.c=.o)
-TARGET = main
+SRCS = src/tensor.c src/dense.c src/activations.c src/optimizer.c src/loss.c src/axiom.c src/main.c
+OBJS = $(patsubst src/%.c,build/%.o,$(SRCS))
+TARGET = build/main
 
-# Default target
 all: $(TARGET)
 
-# Build executable
 $(TARGET): $(OBJS)
 	$(CC) $(OBJS) -o $(TARGET) $(LDFLAGS)
 
-# Compile object files
-%.o: %.c
+build/%.o: src/%.c
+	@mkdir -p build
 	$(CC) $(CFLAGS) -c $< -o $@
 
-# Clean build artifacts
 clean:
-	rm -f $(OBJS) $(TARGET)
+	rm -rf build
 
-# Run with Valgrind for memory leak detection
 valgrind: $(TARGET)
-	valgrind --leak-check=full --show-leak-kinds=all ./$(TARGET)
+	valgrind --leak-check=full --show-leak-kinds=all $(TARGET) test
 
 .PHONY: all clean valgrind

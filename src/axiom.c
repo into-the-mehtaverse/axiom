@@ -1,4 +1,6 @@
 #include "axiom.h"
+#include "loss.h"
+#include <stdio.h>
 #include <stdlib.h>
 
 AxiomNet* axiom_create(void) {
