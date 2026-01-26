@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "axiom.h"
+#include "mnist.h"
 
 static void run_test(void) {
     printf("=== Axiom smoke test ===\n");
@@ -112,9 +113,40 @@ static void run_test(void) {
     printf("=== Done ===\n");
 }
 
+static void run_mnist_load(void) {
+    printf("=== MNIST loader smoke test ===\n");
+    const char* base = "data/MNIST";
+    Tensor *x_train = NULL, *y_train = NULL, *x_test = NULL, *y_test = NULL;
+    if (mnist_load(base, &x_train, &y_train, &x_test, &y_test) != 0) {
+        printf("FAIL: mnist_load(\"%s\")\n", base);
+        return;
+    }
+    printf("x_train [%zu, %zu]\n", x_train->shape[0], x_train->shape[1]);
+    printf("y_train [%zu, %zu]\n", y_train->shape[0], y_train->shape[1]);
+    printf("x_test  [%zu, %zu]\n", x_test->shape[0], x_test->shape[1]);
+    printf("y_test  [%zu, %zu]\n", y_test->shape[0], y_test->shape[1]);
+    /* First 5 train labels (argmax of one-hot) */
+    printf("First 5 train labels: ");
+    for (size_t i = 0; i < 5; i++) {
+        size_t argmax = 0;
+        for (size_t k = 1; k < 10; k++)
+            if (y_train->data[i * 10 + k] > y_train->data[i * 10 + argmax]) argmax = k;
+        printf("%zu ", argmax);
+    }
+    printf("\n=== Done ===\n");
+    tensor_free(x_train);
+    tensor_free(y_train);
+    tensor_free(x_test);
+    tensor_free(y_test);
+}
+
 int main(int argc, char* argv[]) {
     if (argc >= 2 && strcmp(argv[1], "test") == 0) {
         run_test();
+        return 0;
+    }
+    if (argc >= 2 && strcmp(argv[1], "mnist") == 0) {
+        run_mnist_load();
         return 0;
     }
 
@@ -122,6 +154,7 @@ int main(int argc, char* argv[]) {
         printf("Usage: %s <command> [options]\n", argv[0]);
         printf("Commands:\n");
         printf("  test                           Run smoke test\n");
+        printf("  mnist                          Smoke-test MNIST loader\n");
         printf("  train --epochs <n> --lr <rate> Train the model\n");
         printf("  predict <model_file> <input>   Run inference\n");
         return 1;

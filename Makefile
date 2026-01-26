@@ -2,7 +2,7 @@ CC = gcc
 CFLAGS = -Wall -Wextra -std=c11 -O2 -g -Isrc
 LDFLAGS = -lm
 
-SRCS = src/tensor.c src/dense.c src/activations.c src/optimizer.c src/loss.c src/axiom.c src/main.c
+SRCS = src/tensor.c src/dense.c src/activations.c src/optimizer.c src/loss.c src/axiom.c src/mnist.c src/main.c
 OBJS = $(patsubst src/%.c,build/%.o,$(SRCS))
 TARGET = build/main
 
