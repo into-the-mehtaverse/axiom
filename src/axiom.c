@@ -149,31 +149,77 @@ Tensor* axiom_backward(AxiomNet* net, const Tensor* grad_output, float learning_
 }
 
 void axiom_train(AxiomNet* net, Tensor* x_train, Tensor* y_train,
-    size_t epochs, float learning_rate) {
+    size_t epochs, float learning_rate, size_t bsize) {
 
     if (net == NULL || x_train == NULL || y_train == NULL) return;
+    if (bsize <= 0) return; // batch size
+
+    size_t n_samples = x_train->shape[0];
+    size_t n_features = x_train->shape[1];
+    size_t n_classes = y_train->shape[1];
 
 
-    for(size_t epoch = 0; epoch < epochs; epoch++) {
-        Tensor* predictions = axiom_forward(net, x_train);
-        if (predictions == NULL) continue;
+    for (size_t epoch = 0; epoch < epochs; epoch++) {
+        size_t batch_idx = 0; // for print statement after loss
+        for (size_t batch_start = 0; batch_start < n_samples; batch_start += bsize) {
 
-        float loss = loss_cross_entropy(predictions, y_train);
-        printf("Epoch %zu: Loss = %f\n", epoch, loss);
+            // in case of batch smaller than batch size when at end of epoch
+            size_t actual = bsize;
+            if (batch_start + actual > n_samples)
+                actual = n_samples - batch_start;
 
+            // create tensors to hold batch x and y
+            size_t shape_x[] = {actual, n_features};
+            size_t shape_y[] = {actual, n_classes};
+            Tensor* x_batch = tensor_create(shape_x, 2);
+            if (x_batch == NULL) continue;
+            Tensor* y_batch = tensor_create(shape_y, 2);
+            if (y_batch == NULL) {
+                tensor_free(x_batch);
+                continue;
+            }
 
-        Tensor* grad = loss_cross_entropy_grad(predictions, y_train);
-        if (grad == NULL) {
-            tensor_free(predictions);
-            continue;
+            // copy data from full training set to batch tensors
+            for (size_t i = 0; i < actual; i++) {
+                size_t row = batch_start + i;
+                for (size_t f = 0; f < n_features; f++)
+                    x_batch->data[i * n_features + f] = x_train->data[row * x_train->strides[0] + f * x_train->strides[1]];
+                for (size_t c = 0; c < n_classes; c++)
+                    y_batch->data[i * n_classes + c] = y_train->data[row * y_train->strides[0] + c * y_train->strides[1]];
+            }
+
+            // run forward pass on batch
+            Tensor* batch_predictions = axiom_forward(net, x_batch);
+            if (batch_predictions == NULL) {
+                tensor_free(x_batch);
+                tensor_free(y_batch);
+                return;
+            }
+
+            // calculate cross-entropy loss and gradient on batch
+            float loss = loss_cross_entropy(batch_predictions, y_batch);
+            if (batch_idx % 50 == 0) printf("Epoch %zu Batch %zu: Loss = %f\n", epoch, batch_idx, loss);
+
+            Tensor* grad = loss_cross_entropy_grad(batch_predictions, y_batch);
+            if (grad == NULL) {
+                tensor_free(x_batch);
+                tensor_free(y_batch);
+                tensor_free(batch_predictions);
+                return;
+            }
+
+            // run backwards pass and get output for next layer (previous layer)
+            Tensor* grad_outputs = axiom_backward(net, grad, learning_rate);
+
+            tensor_free(x_batch);
+            tensor_free(y_batch);
+            tensor_free(batch_predictions);
+            tensor_free(grad);
+            if (grad_outputs != NULL)
+                tensor_free(grad_outputs);
+
+            batch_idx++;
         }
-
-        Tensor* grad_outputs = axiom_backward(net, grad, learning_rate);
-
-
-        tensor_free(predictions);
-        tensor_free(grad);
-        tensor_free(grad_outputs);
     }
 }
 

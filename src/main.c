@@ -44,8 +44,8 @@ static void run_test(void) {
     y_train->data[6] = 0.0f;
     y_train->data[7] = 1.0f;
 
-    printf("Training 25 epochs, lr=0.05 ...\n");
-    axiom_train(net, x_train, y_train, 25, 0.05f);
+    printf("Training 25 epochs, lr=0.05, batch=2 ...\n");
+    axiom_train(net, x_train, y_train, 25, 0.05f, 2);
 
     Tensor* out_orig = axiom_forward(net, x_train);
     if (!out_orig) {
@@ -164,12 +164,14 @@ static void run_mnist_load(void) {
 static void run_train(int argc, char* argv[]) {
     size_t epochs = 10;
     float lr = 0.01f;
+    size_t bsize = 64;
     const char* output_path = "mnist_model.bin";
     const char* data_path = "data/MNIST";
 
     for (int i = 2; i + 1 < argc; i++) {
         if (strcmp(argv[i], "--epochs") == 0) { epochs = (size_t)atoi(argv[i + 1]); i++; }
         else if (strcmp(argv[i], "--lr") == 0) { lr = (float)atof(argv[i + 1]); i++; }
+        else if (strcmp(argv[i], "--batch") == 0) { bsize = (size_t)atoi(argv[i + 1]); i++; }
         else if (strcmp(argv[i], "--output") == 0) { output_path = argv[i + 1]; i++; }
         else if (strcmp(argv[i], "--data") == 0) { data_path = argv[i + 1]; i++; }
     }
@@ -192,8 +194,8 @@ static void run_train(int argc, char* argv[]) {
     axiom_add(net, axiom_layer_dense(128, 10), LAYER_DENSE);
     axiom_add(net, axiom_activation_softmax(), LAYER_ACTIVATION);
 
-    printf("Training 784 -> 128 -> 10 on MNIST, %zu epochs, lr=%.4f ...\n", epochs, lr);
-    axiom_train(net, x_train, y_train, epochs, lr);
+    printf("Training 784 -> 128 -> 10 on MNIST, %zu epochs, lr=%.4f, batch=%zu ...\n", epochs, lr, bsize);
+    axiom_train(net, x_train, y_train, epochs, lr, bsize);
 
     float acc = compute_accuracy(net, x_test, y_test);
     if (acc >= 0.0f)
@@ -226,7 +228,7 @@ int main(int argc, char* argv[]) {
         printf("Commands:\n");
         printf("  test                           Run smoke test\n");
         printf("  mnist                          Smoke-test MNIST loader\n");
-        printf("  train [--epochs <n>] [--lr <rate>] [--output <path>] [--data <dir>]\n");
+        printf("  train [--epochs <n>] [--lr <rate>] [--batch <n>] [--output <path>] [--data <dir>]\n");
         printf("                             Train on MNIST, save checkpoint\n");
         printf("  predict <model_file> <input>   Run inference\n");
         return 1;
