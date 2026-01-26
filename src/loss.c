@@ -31,6 +31,10 @@ Tensor* loss_cross_entropy_grad(const Tensor* predictions, const Tensor* targets
     Tensor* grad = tensor_subtract(predictions, targets);
     if (grad == NULL) return NULL;
 
+    for (size_t i = 0; i < grad->size; i++) {
+        grad->data[i] = grad->data[i] / (float)predictions->shape[0];
+    }
+
     return grad;
 }
 

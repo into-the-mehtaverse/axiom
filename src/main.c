@@ -113,6 +113,27 @@ static void run_test(void) {
     printf("=== Done ===\n");
 }
 
+static float compute_accuracy(AxiomNet* net, const Tensor* x, const Tensor* y_onehot) {
+    Tensor* out = axiom_forward(net, x);
+    if (!out || out->shape[1] != 10) {
+        if (out) tensor_free(out);
+        return -1.0f;
+    }
+    size_t n = out->shape[0];
+    size_t correct = 0;
+    for (size_t i = 0; i < n; i++) {
+        size_t pred = 0, label = 0;
+        for (size_t k = 1; k < 10; k++) {
+            if (out->data[i * 10 + k] > out->data[i * 10 + pred]) pred = k;
+            if (y_onehot->data[i * 10 + k] > y_onehot->data[i * 10 + label]) label = k;
+        }
+        if (pred == label) correct++;
+    }
+    float acc = (float)correct / (float)n;
+    tensor_free(out);
+    return acc;
+}
+
 static void run_mnist_load(void) {
     printf("=== MNIST loader smoke test ===\n");
     const char* base = "data/MNIST";
@@ -140,6 +161,56 @@ static void run_mnist_load(void) {
     tensor_free(y_test);
 }
 
+static void run_train(int argc, char* argv[]) {
+    size_t epochs = 10;
+    float lr = 0.01f;
+    const char* output_path = "mnist_model.bin";
+    const char* data_path = "data/MNIST";
+
+    for (int i = 2; i + 1 < argc; i++) {
+        if (strcmp(argv[i], "--epochs") == 0) { epochs = (size_t)atoi(argv[i + 1]); i++; }
+        else if (strcmp(argv[i], "--lr") == 0) { lr = (float)atof(argv[i + 1]); i++; }
+        else if (strcmp(argv[i], "--output") == 0) { output_path = argv[i + 1]; i++; }
+        else if (strcmp(argv[i], "--data") == 0) { data_path = argv[i + 1]; i++; }
+    }
+
+    Tensor *x_train = NULL, *y_train = NULL, *x_test = NULL, *y_test = NULL;
+    if (mnist_load(data_path, &x_train, &y_train, &x_test, &y_test) != 0) {
+        printf("train: failed to load MNIST from \"%s\"\n", data_path);
+        return;
+    }
+
+    AxiomNet* net = axiom_create();
+    if (!net) {
+        printf("train: axiom_create failed\n");
+        tensor_free(x_train); tensor_free(y_train);
+        tensor_free(x_test); tensor_free(y_test);
+        return;
+    }
+    axiom_add(net, axiom_layer_dense(784, 128), LAYER_DENSE);
+    axiom_add(net, axiom_activation_relu(), LAYER_ACTIVATION);
+    axiom_add(net, axiom_layer_dense(128, 10), LAYER_DENSE);
+    axiom_add(net, axiom_activation_softmax(), LAYER_ACTIVATION);
+
+    printf("Training 784 -> 128 -> 10 on MNIST, %zu epochs, lr=%.4f ...\n", epochs, lr);
+    axiom_train(net, x_train, y_train, epochs, lr);
+
+    float acc = compute_accuracy(net, x_test, y_test);
+    if (acc >= 0.0f)
+        printf("Test accuracy: %.2f%%\n", acc * 100.0f);
+    else
+        printf("Could not compute test accuracy\n");
+
+    axiom_save(net, output_path);
+    printf("Saved \"%s\"\n", output_path);
+
+    tensor_free(x_train);
+    tensor_free(y_train);
+    tensor_free(x_test);
+    tensor_free(y_test);
+    axiom_free(net);
+}
+
 int main(int argc, char* argv[]) {
     if (argc >= 2 && strcmp(argv[1], "test") == 0) {
         run_test();
@@ -155,13 +226,15 @@ int main(int argc, char* argv[]) {
         printf("Commands:\n");
         printf("  test                           Run smoke test\n");
         printf("  mnist                          Smoke-test MNIST loader\n");
-        printf("  train --epochs <n> --lr <rate> Train the model\n");
+        printf("  train [--epochs <n>] [--lr <rate>] [--output <path>] [--data <dir>]\n");
+        printf("                             Train on MNIST, save checkpoint\n");
         printf("  predict <model_file> <input>   Run inference\n");
         return 1;
     }
 
     if (strcmp(argv[1], "train") == 0) {
-        printf("Training not yet implemented (use 'test' for now)\n");
+        run_train(argc, argv);
+        return 0;
     } else if (strcmp(argv[1], "predict") == 0) {
         printf("Inference not yet implemented\n");
     } else {
