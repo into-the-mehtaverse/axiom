@@ -27,6 +27,8 @@ DenseLayer* dense_create(size_t input_size, size_t output_size) {
     tensor_fill(dense->biases, 0.0f);
 
     dense->input_cache = NULL;  // will be filled during forward pass
+    dense->grad_weights = NULL;
+    dense->grad_biases = NULL;
     dense->input_size = input_size;
     dense->output_size = output_size;
 
@@ -46,6 +48,14 @@ void dense_free(DenseLayer* layer) {
 
     if (layer->input_cache != NULL) {
         tensor_free(layer->input_cache);
+    }
+
+    if (layer->grad_weights != NULL) {
+        tensor_free(layer->grad_weights);
+    }
+
+    if (layer->grad_biases != NULL) {
+        tensor_free(layer->grad_biases);
     }
 
     free(layer);
@@ -79,7 +89,7 @@ Tensor* dense_forward(DenseLayer* layer, const Tensor* input) {
     return result;
 }
 
-Tensor* dense_backward(DenseLayer* layer, const Tensor* grad_output, float learning_rate) {
+Tensor* dense_backward(DenseLayer* layer, const Tensor* grad_output) {
     if (layer == NULL || grad_output == NULL) return NULL;
     if (grad_output->ndim != 2) return NULL;
     if (grad_output->shape[1] != layer->output_size) return NULL;
@@ -91,6 +101,8 @@ Tensor* dense_backward(DenseLayer* layer, const Tensor* grad_output, float learn
     // compute gradients for weights
     Tensor* grad_weights = tensor_matmul(input_transposed, grad_output);
     tensor_free(input_transposed);
+
+    if (grad_weights == NULL) return NULL;
 
     // sum bias over batch (axis 0). bias is shared across batch.
     // ex. if grad_output is [[0.1, 0.2], [0.3, 0.4]] then grad_biases would be [0.4, 0.6];
@@ -111,13 +123,13 @@ Tensor* dense_backward(DenseLayer* layer, const Tensor* grad_output, float learn
         grad_biases->data[j] = sum;
     }
 
-    // update weights and biases with learning rate via gradient descent; later will move this logic to optimizer.c and pass in the function
-    for(size_t i = 0; i < layer->weights->size; i++) {
-        layer->weights->data[i] -= learning_rate * grad_weights->data[i];
-    }
-    for(size_t i = 0; i < layer->biases->size; i++) {
-        layer->biases->data[i] -= learning_rate * grad_biases->data[i];
-    }
+    // free existing gradients if they exist (from previous backward pass)
+    if (layer->grad_weights != NULL) tensor_free(layer->grad_weights);
+    if (layer->grad_biases != NULL) tensor_free(layer->grad_biases);
+
+    // store gradients for optimizer to use
+    layer->grad_weights = tensor_copy(grad_weights);
+    layer->grad_biases = tensor_copy(grad_biases);
 
     // free the temp tensors
     tensor_free(grad_weights);

@@ -1,5 +1,6 @@
 #include "axiom.h"
 #include "loss.h"
+#include "optimizer.h"
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -104,7 +105,7 @@ Tensor* axiom_forward(AxiomNet* net, const Tensor* input) {
     return current_x;
 }
 
-Tensor* axiom_backward(AxiomNet* net, const Tensor* grad_output, float learning_rate) {
+Tensor* axiom_backward(AxiomNet* net, const Tensor* grad_output, Optimizer* opt) {
     if (net == NULL || grad_output == NULL) return NULL;
 
     Tensor* current_grad = tensor_copy(grad_output);  // copying to avoid input modification
@@ -125,7 +126,8 @@ Tensor* axiom_backward(AxiomNet* net, const Tensor* grad_output, float learning_
     for (size_t i = 0; i < net->num_layers; i++) {
         Tensor* next_grad = NULL;
         if (layers[i]->type == LAYER_DENSE) {
-            next_grad = dense_backward(layers[i]->layer.dense, current_grad, learning_rate);
+            next_grad = dense_backward(layers[i]->layer.dense, current_grad);
+            optimizer_step(opt, layers[i]);
         } else if (layers[i]->type == LAYER_ACTIVATION) {
             next_grad = activation_backward(layers[i]->layer.activation, current_grad);
         }
@@ -158,7 +160,7 @@ void axiom_train(AxiomNet* net, Tensor* x_train, Tensor* y_train,
     size_t n_features = x_train->shape[1];
     size_t n_classes = y_train->shape[1];
 
-
+    Optimizer* opt = optimizer_sgd_create(learning_rate);
     for (size_t epoch = 0; epoch < epochs; epoch++) {
         size_t batch_idx = 0; // for print statement after loss
         for (size_t batch_start = 0; batch_start < n_samples; batch_start += bsize) {
@@ -209,7 +211,7 @@ void axiom_train(AxiomNet* net, Tensor* x_train, Tensor* y_train,
             }
 
             // run backwards pass and get output for next layer (previous layer)
-            Tensor* grad_outputs = axiom_backward(net, grad, learning_rate);
+            Tensor* grad_outputs = axiom_backward(net, grad, opt);
 
             tensor_free(x_batch);
             tensor_free(y_batch);
@@ -221,6 +223,7 @@ void axiom_train(AxiomNet* net, Tensor* x_train, Tensor* y_train,
             batch_idx++;
         }
     }
+    optimizer_free(opt);
 }
 
 void axiom_save(AxiomNet* net, const char* filename) {

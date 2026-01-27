@@ -35,6 +35,8 @@ void axiom_add(AxiomNet* net, void* layer, int layer_type);
 void axiom_train(AxiomNet* net, Tensor* x_train, Tensor* y_train,
                  size_t epochs, float learning_rate, size_t bsize);
 
+Tensor* axiom_backward(AxiomNet* net, const Tensor* grad_output, Optimizer* opt);
+
 // Inference
 Tensor* axiom_forward(AxiomNet* net, const Tensor* input);
 
