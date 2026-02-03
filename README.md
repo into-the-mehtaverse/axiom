@@ -22,7 +22,7 @@ Only C in this repo, no BLAS, LAPACK, or Python.
 ## Tech Stack & Architecture
 - **Language:** C
 - **Build System:** Makefile
-- **Profiling:** Valgrind (Memcheck)
+- **Profiling:** leaks on macos
 
 ### Core Components
 1. **`tensor.c`**: The engine. Handles raw data pointers, shape strides, and matrix math.
