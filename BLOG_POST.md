@@ -47,7 +47,7 @@ Axiom is built in layers of abstraction, each depending only on what's below it:
 
 The network itself is a linked list of layers. Each layer stores its own weights, gradients, and cached inputs (for backprop). Forward pass walks the list head-to-tail; backward pass reverses it.
 
-I purposely built this library modularly so that I can extend it with more layers / optimizers / methods down the line. Adding a new layer type means implementing `forward()` and `backward()`. The rest of the machinery stays untouched.
+I purposely built this library modularly so that I can extend it and experiment with more layers / optimizers / methods. This library will serve as my learning space. Adding a new layer type means implementing `forward()` and `backward()`. The rest of the machinery stays untouched.
 
 ---
 
