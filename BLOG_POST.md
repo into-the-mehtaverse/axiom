@@ -4,7 +4,11 @@ Axiom is a neural network library I wrote in pure C that achieves **96.5% accura
 
 I used an LLM to scaffold boilerplate (function definitions, etc, directed by me), but every line of logic is mine. The matrix multiplications, the backpropagation, the memory management are all handwritten.
 
-Why? Because modern ML frameworks are black boxes, and it was time for me to go deeper. I began learning ML 100 days ago (I've been [documenting my progress daily on X](https://x.com/MehtaDontStop/status/2015997510330744843)). In the first ~92 days, I completed [Andrew Ng's DeepLearning specialization & three Kaggle comps](https://github.com/into-the-mehtaverse/machine-learning), built a [segmentation studio using the SAM model](https://github.com/into-the-mehtaverse/segmentation-studio), and wrote the [LSTM forward pass in python and pure C without imports](https://github.com/into-the-mehtaverse/lstm-no-imports). Over the last 8 days, I built Axiom to cement my knowledge and solidify my mastery over the fundamentals. I wasn't satisfied with using methods like Pytorch's "loss.backward()" and training with tensors without knowing what's behind the hood; abstraction removes boilerplate at the expense of learning. The only way to truly know is to build it yourself.
+Why? Because modern ML frameworks are black boxes, and it was time for me to go deeper.
+
+I began learning ML 100 days ago (I've been [documenting my progress daily on X](https://x.com/MehtaDontStop/status/2015997510330744843)). In the first ~92 days, I completed [Andrew Ng's DeepLearning specialization & three Kaggle comps](https://github.com/into-the-mehtaverse/machine-learning), built a [segmentation studio using the SAM model](https://github.com/into-the-mehtaverse/segmentation-studio), and wrote the [LSTM forward pass in python and pure C without imports](https://github.com/into-the-mehtaverse/lstm-no-imports). Over the last 8 days, I built Axiom to cement my knowledge and solidify my mastery over the fundamentals.
+
+I wasn't satisfied with using methods like Pytorch's "loss.backward()" and training with tensors without knowing what's behind the hood; abstraction removes boilerplate at the expense of learning. The only way to truly know is to build it yourself.
 
 Quick API usage example:
 
