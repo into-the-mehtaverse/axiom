@@ -4,9 +4,15 @@ Axiom is a neural network library I wrote in pure C that achieves **96.5% accura
 
 I used an LLM to scaffold boilerplate (function definitions, etc, directed by me), but every line of logic is mine. The matrix multiplications, the backpropagation, the memory management are all handwritten.
 
-Why? Because modern ML frameworks are black boxes, and it was time for me to go deeper. I began learning ML 100 days ago (I've been documenting my progress daily on my X page here: link). In the first ~92 days, I completed Andrew Ng's DeepLearning specialization & all related projects, built a segmentation studio using the SAM model, finished three kaggle comps, and wrote the LSTM forward pass in python and pure c without imports. Over the last 8 days, I built Axiom to cement my knowledge and solidify my mastery over the fundamentals. I wasn't satisfied with using methods like Pytorch's "loss.backward()" and training with tensors without knowing what's behind the hood; abstraction removes boilerplate at the expense of learning. The only way to truly know is to build it yourself.
+Why? Because modern ML frameworks are black boxes, and it was time for me to go deeper. I began learning ML 100 days ago (I've been [documenting my progress daily on X](https://x.com/MehtaDontStop/status/2015997510330744843)). In the first ~92 days, I completed [Andrew Ng's DeepLearning specialization & three Kaggle comps](https://github.com/into-the-mehtaverse/machine-learning), built a [segmentation studio using the SAM model](https://github.com/into-the-mehtaverse/segmentation-studio), and wrote the [LSTM forward pass in python and pure C without imports](https://github.com/into-the-mehtaverse/lstm-no-imports). Over the last 8 days, I built Axiom to cement my knowledge and solidify my mastery over the fundamentals. I wasn't satisfied with using methods like Pytorch's "loss.backward()" and training with tensors without knowing what's behind the hood; abstraction removes boilerplate at the expense of learning. The only way to truly know is to build it yourself.
 
 Quick API usage example:
+
+### Build & Run
+\`\`\`bash
+make
+./build/main train --epochs 10 --lr 0.01
+
 ```c
 // Define network: 784 → 128 (ReLU) → 10 (Softmax)
 AxiomNet* net = axiom_create();
@@ -17,7 +23,7 @@ axiom_add(net, axiom_activation_softmax(), LAYER_ACTIVATION);
 
 // Train and save
 axiom_train(net, x_train, y_train, epochs, learning_rate, batch_size);
-axiom_save(net, "model.bin");
+axiom_save(net, "mnist_model.bin");
 ```
 If you want to run it with MNIST, add a data folder to the root, and within an MNIST subfolder, add the four MNIST files.
 
@@ -164,4 +170,4 @@ The black box is open.
 
 ---
 
-*[View the source on GitHub →](#)*
+*[View the source on GitHub →](https://github.com/into-the-mehtaverse/axiom)*
