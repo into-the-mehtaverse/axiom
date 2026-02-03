@@ -1,7 +1,7 @@
 # axiom - my c-neural-net
 Welcome to axiom - my lightweight, dependency-free neural network library written in pure C from scratch.
 
-*For a deep dive into the technical decisions behind Axiom, [read the blog post →](link)*
+*For a deep dive into the technical decisions behind Axiom, [read the blog post →](BLOG_POST.md)*
 
 > **Status:** Complete
 > **Result:** 96.5% Accuracy on MNIST using purely handwritten backpropagation and matrix operations.
